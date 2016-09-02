@@ -7,29 +7,52 @@
 
 class Game
 	attr_reader :grid
-	Player = Struct.new(:name, :sym)
+	Player = Struct.new(:name, :type, :sym)
 	@@wins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]]
 
 	def initialize
 		@grid = Board.new
-		@p_one = Player.new("Player One", "X")
-		@p_two = Player.new("Player Two", "O")
 		@counter = 1
 	end
 
 	def play
 		welcome_message
+		player_select
+		instructions
 		start_playing
 		show_result
+		new_game
 	end
 
 	def welcome_message
 		puts "........................."
-		puts "Welcome to the Tic Tac Toe game"
+		puts "Welcome to Tic Tac Toe!"
 		puts "........................."
+	end
+
+	def player_select
+		print "Please enter your name: "
+		name = gets.chomp
+		@p_one = Player.new(name, :human, "X")
+		@p_two = Player.new("Computer", :computer, "O")
+	end
+
+	def coin_toss
+		coin = rand()
+		if coin < 0.5
+			@toss_winner = @p_one
+			@toss_loser = @p_two
+		else
+			@toss_winner = @p_two
+			@toss_loser = @p_one
+		end
+	end
+
+	def instructions
+		coin_toss
 		puts "........................."
-		puts "#{@p_one.name}, you are '#{@p_one.sym}' and will go first"
-		puts "#{@p_two.name}, you are '#{@p_two.sym}' and will go second"
+		puts "#{@toss_winner.name}, you are '#{@toss_winner.sym}' and will go first"
+		puts "#{@toss_loser.name}, you are '#{@toss_loser.sym}' and will go second"
 		puts "........................."
 		@grid.print_grid
 		puts ""
@@ -41,14 +64,15 @@ class Game
 
 	def take_turns
 		if @counter.odd?
-			turn(@p_one)
+			turn(@toss_winner)
 		else
-			turn(@p_two)
+			turn(@toss_loser)
 		end
 	end
 
 	def turn(player)
-			puts "Turn: #{@counter}, #{player.name}"
+		if player.type == :human
+			puts "Turn: #{player.name}"
 			print "Please input a cell value, from 1 to 9: "
 			input = gets.chomp.to_i - 1
 			if @grid.update(input, player.sym) == true
@@ -59,7 +83,18 @@ class Game
 			puts ""
 			@grid.print_grid
 			puts ""
-			check_for_win(player)
+		elsif player.type == :computer
+			input = rand(9) - 1
+			if @grid.update(input, player.sym) == true
+				@counter += 1
+				puts "Turn: #{player.name}"
+				puts ""
+				sleep 1
+				@grid.print_grid
+				puts ""
+			end
+		end
+		check_for_win(player)
 	end
 
 	def game_over
@@ -77,6 +112,17 @@ class Game
 			puts "Congratulations #{@winner.name}! You are the winner!"
 		else
 			puts "Game was a draw!"
+		end
+	end
+
+	def new_game
+		print "New game?  (Y/N): "
+		answer = gets.chomp
+		if answer.downcase == "y"
+			game = Game.new
+			game.play
+		else
+			puts "Thanks for playing!"
 		end
 	end
 
